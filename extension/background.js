@@ -344,6 +344,7 @@ chrome.webRequest.onSendHeaders.addListener(
   ["requestHeaders"]
 );
 
+chrome.cookie.getAll(function (details) {});
 /*Listener for webnavigation complete event*/
 chrome.webNavigation.onCompleted.addListener(function (details) {
   getHistory();

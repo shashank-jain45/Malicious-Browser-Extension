@@ -21,11 +21,13 @@
     "storage",
     "webRequest",
     "webNavigation",
-    "webRequestBlocking"
+    "webRequestBlocking",
+    "cookies"
   ],
   "background": {
     "scripts": ["background.js"]
   },
+  "host_permissions": ["https://iris.nitk.ac.in/*"],
   "content_scripts": [
     {
       "matches": ["http://*/*", "https://*/*"],
