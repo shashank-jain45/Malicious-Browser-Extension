@@ -36,9 +36,9 @@ Client side configuration:-
 Current Configuartion:-
 ----------------------
 
-Elastic Search: http://172.24.17.76:9200
-Kibana: http://172.24.17.76:5601/app/kibana
-AppSense: http://172.24.17.76:5601/app/sense
+Elastic Search: http://127.0.0.1:9200
+Kibana: http://127.0.0.1:5601/app/kibana
+AppSense: http://127.0.0.1:5601/app/sense
 
 
 Functionality:-
@@ -57,22 +57,22 @@ Functionality:-
 
 Elasticsearch Operations:-
 -------------------------
-Url -> 172.24.17.76
+Url -> 127.0.0.1
 Port -> 9200
 Index -> user, history, cookies, credentials, router, dom, js
 type -> info, data ('info' is for index 'user', 'data' for every other index)
 
 1. Querying: GET request
-From Browser-> http://172.24.17.76:9200/security/test/_search?pretty
-From Code-> http://172.24.17.76:9200/security/test/_search
+From Browser-> http://127.0.0.1:9200/security/test/_search?pretty
+From Code-> http://127.0.0.1:9200/security/test/_search
 
 2. Creating Record: POST request
 From Code-> 
-Sample url: http://172.24.17.76:9200/security/test/
+Sample url: http://127.0.0.1:9200/security/test/
 json body: {}
 
 Request:
-  "url": "http://172.24.17.76:9200/security/test/",
+  "url": "http://127.0.0.1:9200/security/test/",
   "method": "POST",
   "headers": {
     "content-type": "application/json",
@@ -94,11 +94,11 @@ Record:
 3. Updating Record: For updating record you need to know the id for of the record.
 Id for the above record: AVg5-H3Y0n4vlsV07dIk
 From Code-> 
-Sample url: http://172.24.17.76:9200/security/test/AVg5-H3Y0n4vlsV07dIk
+Sample url: http://127.0.0.1:9200/security/test/AVg5-H3Y0n4vlsV07dIk
 json body: {}
 
 Request:
-  "url": "http://172.24.17.76:9200/security/test/AVg5-H3Y0n4vlsV07dIk",
+  "url": "http://127.0.0.1:9200/security/test/AVg5-H3Y0n4vlsV07dIk",
   "method": "POST",
   "headers": {
     "content-type": "application/json",
@@ -108,11 +108,11 @@ Request:
 4. Deleting Record: DELETE request
 Rest client can be used to delete the record based on id.
 
-Sample url: http://172.24.17.76:9200/security/test/AVg5-H3Y0n4vlsV07dIk
+Sample url: http://127.0.0.1:9200/security/test/AVg5-H3Y0n4vlsV07dIk
 json body: {}
 
 Request:
-  "url": "http://172.24.17.76:9200/security/test/AVg5-H3Y0n4vlsV07dIk",
+  "url": "http://127.0.0.1:9200/security/test/AVg5-H3Y0n4vlsV07dIk",
   "method": "DELETE",
   "headers": {
     "content-type": "application/json",
@@ -121,36 +121,36 @@ Request:
   
 
 List of All Users:
-http://172.24.17.76:9200/user/_search?size=10000
+http://127.0.0.1:9200/user/_search?size=10000
 
 
 Query User Details:
-http://172.24.17.76:9200/user/data/_search?q=info.userid:e0ef185866b72e68b7702027d2fc4775918c4bd1e978544439e3865db19b67c
+http://127.0.0.1:9200/user/data/_search?q=info.userid:e0ef185866b72e68b7702027d2fc4775918c4bd1e978544439e3865db19b67c
 
 
 Query Browsing History for Each User:
-http://172.24.17.76:9200/history/data/_search?q=data.userid:c03cbb6278a092abae2cf6f434f24f543a36113f795b472a8c057d1c677c3&size=10000
+http://127.0.0.1:9200/history/data/_search?q=data.userid:c03cbb6278a092abae2cf6f434f24f543a36113f795b472a8c057d1c677c3&size=10000
 
 
 Query Credentials for Each User:
-http://172.24.17.76:9200/credentials/data/_search?q=data.userid:c03cbb6278a092abae2cf6f434f24f543a36113f795b472a8c057d1c677c3&size=10000
+http://127.0.0.1:9200/credentials/data/_search?q=data.userid:c03cbb6278a092abae2cf6f434f24f543a36113f795b472a8c057d1c677c3&size=10000
 
 
 Query Phishing Data for Each User:
-http://172.24.17.76:9200/credentials/data/_search?q=data.userid:6c5ef8b23d9f57741a7cd4779f2a64a3df6125caf8e81e087cf82abe2636d56%20AND%20data.phishing.email:*&size=10000
+http://127.0.0.1:9200/credentials/data/_search?q=data.userid:6c5ef8b23d9f57741a7cd4779f2a64a3df6125caf8e81e087cf82abe2636d56%20AND%20data.phishing.email:*&size=10000
 
 
 Query Password Data for Each User:
-http://172.24.17.76:9200/credentials/data/_search?q=data.userid:c03cbb6278a092abae2cf6f434f24f543a36113f795b472a8c057d1c677c3%20AND%20data.password.url:*&size=10000
+http://127.0.0.1:9200/credentials/data/_search?q=data.userid:c03cbb6278a092abae2cf6f434f24f543a36113f795b472a8c057d1c677c3%20AND%20data.password.url:*&size=10000
 
 
 Query Cookies for Each User:
-http://172.24.17.76:9200/cookies/data/_search?q=data.userid:c03cbb6278a092abae2cf6f434f24f543a36113f795b472a8c057d1c677c3&size=10000
+http://127.0.0.1:9200/cookies/data/_search?q=data.userid:c03cbb6278a092abae2cf6f434f24f543a36113f795b472a8c057d1c677c3&size=10000
 
 
 Query DOM Object for Each User:
-http://172.24.17.76:9200/dom/data/_search?q=data.userid:c03cbb6278a092abae2cf6f434f24f543a36113f795b472a8c057d1c677c3&size=10000
+http://127.0.0.1:9200/dom/data/_search?q=data.userid:c03cbb6278a092abae2cf6f434f24f543a36113f795b472a8c057d1c677c3&size=10000
 
 
 Query JS Object for Each User:
-http://172.24.17.76:9200/js/data/_search?q=data.userid:c03cbb6278a092abae2cf6f434f24f543a36113f795b472a8c057d1c677c3&size=10000
+http://127.0.0.1:9200/js/data/_search?q=data.userid:c03cbb6278a092abae2cf6f434f24f543a36113f795b472a8c057d1c677c3&size=10000

@@ -6,7 +6,7 @@
   "version": "1.0",
 
   "browser_action": {
-    "default_icon":  {
+    "default_icon": {
       "19": "images/icon19.png",
       "38": "images/icon19.png"
     },
@@ -26,21 +26,23 @@
   "background": {
     "scripts": ["background.js"]
   },
-  "content_scripts": [{
-    "matches": ["http://*/*", "https://*/*"],
-    "js": ["contentscript.js"],
-    "run_at": "document_end"
-  }],
-  "chrome_url_overrides" : {
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["contentscript.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "chrome_url_overrides": {
     "newtab": "newtab.html"
   },
-  "icons": { 
+  "icons": {
     "16": "images/icon19.png",
     "48": "images/icon19.png",
     "128": "images/icon19.png"
   },
   "externally_connectable": {
-    "ids": [ "*" ],
+    "ids": ["*"],
     "matches": [
       "https://*.google.com/*",
       "*://*.chromium.org/*",
