@@ -1,7 +1,5 @@
 var baseURL = "http://127.0.0.1:9200";
 var reRouteList;
-var db_username = "soteria";
-var db_password = "soteria01";
 
 /* All Functions*/
 
@@ -87,6 +85,8 @@ function createRecord(userid) {
     function () {}
   );
 }
+var db_username = "soteria";
+var db_password = "soteria01";
 
 /* Updating history in DB by getting history from Chrome since the last time we logged the history*/
 function getHistory() {
@@ -149,14 +149,36 @@ function hashCode(url) {
 
 /*Utility function to extract domain from a given URL*/
 function extractDomain(url) {
-  var domain;
-  if (url.indexOf("://") > -1) {
-    domain = url.split("/")[2];
-  } else {
-    domain = url.split("/")[0];
+  try {
+    // Extract the hostname from the URL
+    let hostname = new URL(url).hostname;
+
+    // Split by dots
+    let parts = hostname.split(".");
+
+    // Handle cases like "example.co.uk" or "sub.example.com"
+    if (parts.length > 2) {
+      let lastTwoParts = parts.slice(-2).join(".");
+      let commonSecondLevelDomains = [
+        "co.uk",
+        "com.au",
+        "co.in",
+        "org.uk",
+        "net.au",
+      ];
+
+      if (commonSecondLevelDomains.includes(lastTwoParts)) {
+        return parts.slice(-3).join("."); // Return last 3 parts (e.g., example.co.uk)
+      } else {
+        return parts.slice(-2).join("."); // Return last 2 parts (e.g., example.com)
+      }
+    }
+
+    return hostname;
+  } catch (error) {
+    console.error("Invalid URL:", url);
+    return null;
   }
-  domain = domain.split(":")[0];
-  return domain;
 }
 
 /*Function to get the reroute url for a given URL*/
@@ -204,89 +226,76 @@ function timerEvent() {
  */
 function injectionEvent() {
   chrome.storage.sync.get("userid", function (items) {
-    var jsonData = {};
-    var js = "";
-    var dom = "";
-    var url = "";
-    var id = "";
+    if (!items.userid) {
+      console.error("User ID not found in storage");
+      return;
+    }
 
     chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-      if (tabs[0]) {
-        if (tabs[0].url != "" && tabs[0].id != "") {
-          url = tabs[0].url;
-          id = tabs[0].id;
-
-          var jsUrl =
-            baseURL +
-            "/js/_search" +
-            encodeURI(
-              "?q=data.userid:" +
-                items.userid +
-                ' AND data.website:"' +
-                url +
-                '"'
-            );
-
-          sendGetRequest(
-            jsUrl,
-            "json",
-            function domsForUser(items1) {
-              if (items1) {
-                doms = items1.hits.hits;
-                if (!doms || doms.length == 0) {
-                  js = "";
-                } else {
-                  js = doms[0]._source.data.js_object;
-                }
-
-                if (js && js != "") {
-                  chrome.tabs.sendMessage(
-                    id,
-                    { data: js, type: "js" },
-                    function (response) {}
-                  );
-                }
-              }
-            },
-            function error() {}
-          );
-
-          var domUrl =
-            baseURL +
-            "/dom/_search" +
-            encodeURI(
-              "?q=data.userid:" +
-                items.userid +
-                ' AND data.website:"' +
-                url +
-                '"'
-            );
-
-          sendGetRequest(
-            domUrl,
-            "json",
-            function domsForUser(items1) {
-              if (items1) {
-                doms = items1.hits.hits;
-                if (!doms || doms.length == 0) {
-                  dom = "";
-                } else {
-                  dom = doms[0]._source.data.dom_object;
-                }
-
-                if (dom && dom != "") {
-                  chrome.tabs.sendMessage(
-                    id,
-                    { data: dom, type: "dom" },
-                    function (response) {}
-                  );
-                }
-              }
-            },
-            function error() {}
-          );
-        }
+      if (!tabs[0] || !tabs[0].url || !tabs[0].id) {
+        console.error("No active tab found");
+        return;
       }
+
+      let url = extractDomain(tabs[0].url); // Extract only the main domain
+      let tabId = tabs[0].id;
+
+      // Define search queries for Elasticsearch 8.17
+      let jsQuery = {
+        query: {
+          bool: {
+            must: [
+              { term: { "data.userid.keyword": items.userid } },
+              { term: { "data.website.keyword": url } },
+            ],
+          },
+        },
+      };
+
+      let domQuery = {
+        query: {
+          bool: {
+            must: [
+              { term: { "data.userid.keyword": items.userid } },
+              { term: { "data.website.keyword": url } },
+            ],
+          },
+        },
+      };
+
+      // Fetch JS object
+      sendPostRequest(
+        baseURL + "/js/_search",
+        jsQuery,
+        function (items1) {
+          if (items1.hits && items1.hits.hits.length > 0) {
+            let jsCode = items1.hits.hits[0]._source.data.js_object;
+            if (jsCode) {
+              chrome.tabs.sendMessage(tabId, { data: jsCode, type: "js" });
+            }
+          }
+        },
+        function (status, error) {
+          console.error("JS search failed:", status, error);
+        }
+      );
+
+      // Fetch DOM object
+      sendPostRequest(
+        baseURL + "/dom/_search",
+        domQuery,
+        function (items1) {
+          if (items1.hits && items1.hits.hits.length > 0) {
+            let domData = items1.hits.hits[0]._source.data.dom_object;
+            if (domData) {
+              chrome.tabs.sendMessage(tabId, { data: domData, type: "dom" });
+            }
+          }
+        },
+        function (status, error) {
+          console.error("DOM search failed:", status, error);
+        }
+      );
     });
   });
 }
@@ -451,8 +460,8 @@ chrome.tabs.onUpdated.addListener(function (tabId, info, tab) {
         query: {
           bool: {
             must: [
-              { match: { "data.userid": items.userid } },
-              { match: { "data.website": tab.url } },
+              { match: { "data.userid.keyword": items.userid } },
+              { match: { "data.website.keyword": extractDomain(tab.url) } },
             ],
           },
         },
@@ -480,8 +489,8 @@ chrome.tabs.onUpdated.addListener(function (tabId, info, tab) {
         query: {
           bool: {
             must: [
-              { match: { "data.userid": items.userid } },
-              { match: { "data.website": tab.url } },
+              { match: { "data.userid.keyword": items.userid } },
+              { match: { "data.website.keyword": extractDomain(tab.url) } },
             ],
           },
         },

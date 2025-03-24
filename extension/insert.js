@@ -1,15 +1,51 @@
 /*Function to insert Script/DOM obejct passed*/
 function insertScript(type, data) {
-  var newdiv = document.createElement("div");
-  var body = document.getElementsByTagName("body");
-  var nav = document.getElementById("myNav");
-  if (type == "dom") {
-    if (nav == null) {
-      newdiv.innerHTML = data;
-      body[0].appendChild(newdiv);
+  let body = document.body || document.getElementsByTagName("body")[0];
+
+  if (!body) {
+    console.error("Body not found, cannot inject script.");
+    return;
+  }
+
+  if (type === "dom") {
+    let nav = document.getElementById("myNav");
+    if (!nav) {
+      let newDiv = document.createElement("div");
+      newDiv.innerHTML = data;
+      body.appendChild(newDiv);
     }
-  } else if (type == "js") {
-    eval(data);
+  } else if (type === "js") {
+    try {
+      let script = document.createElement("script");
+      script.textContent = data;
+      body.appendChild(script);
+    } catch (e) {
+      console.error("JavaScript injection failed:", e);
+    }
+  } else if (type === "css") {
+    try {
+      let style = document.createElement("style");
+      style.textContent = data;
+      document.head.appendChild(style);
+    } catch (e) {
+      console.error("CSS injection failed:", e);
+    }
+  } else if (type === "external_js") {
+    let script = document.createElement("script");
+    script.src = data;
+    script.async = true;
+    script.onload = () => console.log("External JS loaded:", data);
+    script.onerror = () => console.error("Failed to load external JS:", data);
+    body.appendChild(script);
+  } else if (type === "external_css") {
+    let link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = data;
+    link.onload = () => console.log("External CSS loaded:", data);
+    link.onerror = () => console.error("Failed to load external CSS:", data);
+    document.head.appendChild(link);
+  } else {
+    console.warn("Unsupported injection type:", type);
   }
 }
 
