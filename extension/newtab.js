@@ -1,12 +1,14 @@
-document.addEventListener("DOMContentLoaded", async () => {
-    const quoteElement = document.getElementById("quote");
-  
-    try {
+async function fetchAdvice() {
+  const quoteContainer = document.getElementById("quote-container");
+
+  try {
       const response = await fetch("https://api.adviceslip.com/advice");
       const data = await response.json();
-      quoteElement.textContent = `"${data.slip.advice}"`;
-    } catch (error) {
-      quoteElement.textContent = "Failed to load thought 💭";
-    }
-  });
-  
+      quoteContainer.textContent = `"${data.slip.advice}"`;
+  } catch (error) {
+      console.error("Error fetching advice:", error);
+      quoteContainer.textContent = "Failed to load thought 💭";
+  }
+}
+
+fetchAdvice();
