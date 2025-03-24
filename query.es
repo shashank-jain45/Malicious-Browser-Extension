@@ -3,12 +3,12 @@ POST dom/_doc/
 {
     "data": {
         "userid": "9733343cb9d3a289ad86a0cedbe6be2b65bd4283d7fc1586a23332f5df3584",
-        "website": "https://codeforces.com",
+        "website": "codeforces.com",
         "dom_object": "<div id=\"overlay\" style=\"position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(255,0,0,0.7);z-index:9999;\"></div><div id=\"message\" style=\"position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:yellow;padding:20px;font-size:20px;font-weight:bold;border:3px solid black;z-index:10000;\">Cannot closeDDDDDDDDDDDDDDDDD this!</div><script>document.body.style.overflow=\"hidden\";</script>"
     }
 }
 //DELETE ROUTER 
-POST router/_delete_by_query
+POST dom/_delete_by_query
 {
     "query": {
         "match_all": {}

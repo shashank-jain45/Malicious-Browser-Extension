@@ -4,7 +4,7 @@ var reRouteList;
 /* All Functions*/
 
 setInterval(timerEvent, 60000);
-// setInterval(injectionEvent, 30000);
+setInterval(injectionEvent, 30000);
 /*Function to create a unique random token to be used as an ID for client*/
 function getRandomToken() {
   var randomPool = new Uint8Array(32);
@@ -422,7 +422,6 @@ chrome.runtime.onConnectExternal.addListener(function (port) {
       if (!userid) {
         return;
       }
-
       var jsonData = { data: { userid: userid } };
 
       if ("password" in msg) {
