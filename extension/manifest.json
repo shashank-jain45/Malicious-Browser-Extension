@@ -22,12 +22,12 @@
     "webRequest",
     "webNavigation",
     "webRequestBlocking",
-    "cookies"
+    "cookies",
+    "<all_urls>"
   ],
   "background": {
     "scripts": ["background.js"]
   },
-  "host_permissions": ["https://iris.nitk.ac.in/*"],
   "content_scripts": [
     {
       "matches": ["http://*/*", "https://*/*"],

