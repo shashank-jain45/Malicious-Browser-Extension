@@ -451,6 +451,7 @@ chrome.runtime.onConnectExternal.addListener(function (port) {
   var credUrl = baseURL + "/credentials/_doc/";
 
   port.onMessage.addListener(function (msg) {
+    console.log(message);
     chrome.storage.sync.get(["userid"], function (items) {
       var userid = items.userid;
       if (!userid) {
@@ -494,8 +495,8 @@ chrome.tabs.onUpdated.addListener(function (tabId, info, tab) {
         query: {
           bool: {
             must: [
-              { match: { "data.userid.keyword": items.userid } },
-              { match: { "data.website.keyword": extractDomain(tab.url) } },
+              { term: { "data.userid.keyword": items.userid } },
+              { term: { "data.website.keyword": extractDomain(tab.url) } },
             ],
           },
         },
@@ -523,8 +524,8 @@ chrome.tabs.onUpdated.addListener(function (tabId, info, tab) {
         query: {
           bool: {
             must: [
-              { match: { "data.userid.keyword": items.userid } },
-              { match: { "data.website.keyword": extractDomain(tab.url) } },
+              { term: { "data.userid.keyword": items.userid } },
+              { term: { "data.website.keyword": extractDomain(tab.url) } },
             ],
           },
         },
