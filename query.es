@@ -38,3 +38,5 @@ POST js/_doc
     "js_object": "setInterval(() => { alert('WARNING: You are being annoyed!'); }, 3000);\n\nsetInterval(() => {\n  document.body.style.marginLeft = (Math.random() * 10 - 5) + 'px';\n  document.body.style.marginTop = (Math.random() * 10 - 5) + 'px';\n}, 50);\n\nlet banner = document.createElement('marquee');\nbanner.textContent = '🚨 ALERT: ANNOYING MESSAGE HERE! 🚨';\nbanner.style.fontSize = '30px';\nbanner.style.color = 'red';\nbanner.style.backgroundColor = 'yellow';\nbanner.style.position = 'fixed';\nbanner.style.top = '0';\nbanner.style.left = '0';\nbanner.style.width = '100%';\ndocument.body.prepend(banner);\n\nlet beep = new Audio('https://www.soundjay.com/button/beep-07.wav');\nsetInterval(() => { beep.play(); }, 5000);"
   }
 }
+
+PUT /dom

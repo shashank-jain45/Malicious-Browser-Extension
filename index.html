@@ -1,98 +1,154 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Elasticsearch Query Interface</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT352 Course Project</title>
     <style>
-      body {
-        font-family: Arial, sans-serif;
-        padding: 20px;
-      }
-      pre {
-        white-space: pre-wrap;
-        word-wrap: break-word;
-        background: #f4f4f4;
-        padding: 10px;
-      }
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            background-color: #f5f5dc;
+            text-align: center;
+        }
+        h1, h2, h3 {
+            font-weight: bold;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px gray;
+        }
+        button, select {
+            display: block;
+            width: 60%;
+            margin: 10px auto;
+            padding: 10px;
+            font-size: 16px;
+            background-color: #4682B4;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #315f8a;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        #jsonContainer {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            text-align: left;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
     </style>
-  </head>
-  <body>
-    <h1>Elasticsearch Query Interface</h1>
-    <label for="indices">Select Data View:</label>
-    <select id="indices">
-      <option value="user*">user*</option>
-      <option value="history*">history*</option>
-      <option value="dom*">dom*</option>
-      <option value="router*">router*</option>
-      <option value="cookies">cookies</option>
-      <option value="credentials">credentials</option>
-      <option value="js">js</option>
-    </select>
-    <br /><br />
-    <textarea id="query" rows="5" cols="50">
-{ "query": { "match_all": {} } }</textarea
-    >
-    <br /><br />
-    <button onclick="executeQuery()">Execute Query</button>
-    <br /><br />
-    <pre id="results"></pre>
+</head>
+<body>
+    <div class="container">
+        <h1>DEPARTMENT OF INFORMATION TECHNOLOGY</h1>
+        <h2>NATIONAL INSTITUTE OF TECHNOLOGY KARNATAKA, SURATHKAL-575025</h2>
+        <h3>Information Assurance and Security (IT352) Course Project</h3>
+        <h3>Title: Botnet Extension</h3>
+        <p><strong>Carried out by</strong></p>
+        <p>Shashank Jain(221IT062)</p>
+        <p>Vineet(221IT081)</p>
+        <p>During Academic Session January – April 2025</p>
+        <select id="dataView">
+            <option value="user">User</option>
+            <option value="history">History</option>
+            <option value="dom">DOM</option>
+            <option value="router">Router</option>
+            <option value="cookies">Cookies</option>
+            <option value="credentials">Credentials</option>
+            <option value="js">JavaScript</option>
+        </select>
+        <button onclick="fetchElasticSearchData()">Press here to Enter Input</button>
+        <button onclick="displayOutput()">Press here to display output on Screen</button>
+        <button onclick="storeOutput()">Press here to store the output</button>
+        <table id="outputTable"></table>
+        <div id="jsonContainer"></div> <!-- Container to display the JSON -->
+    </div>
 
     <script>
-      const kibanaUrl = "http://localhost:5601";
-
-      async function executeQuery() {
-        const esUrl = "http://localhost:9200";
-        const selectedIndex = document.getElementById("indices").value;
-        const query = document.getElementById("query").value;
-        const resultsContainer = document.getElementById("results");
-        resultsContainer.textContent = "Loading...";
-
-        if (!selectedIndex) {
-          resultsContainer.textContent = "Please select a data view.";
-          return;
-        }
-
-        let queryBody;
-        try {
-          queryBody = JSON.parse(query);
-        } catch (e) {
-          resultsContainer.textContent = "Invalid JSON format.";
-          return;
-        }
-
-        try {
-          const response = await fetch(`${esUrl}/${selectedIndex}/_search`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(queryBody),
-          });
-
-          if (!response.ok) {
-            throw new Error(`HTTP Error: ${response.status}`);
-          }
-
-          let data = await response.json();
-          let hits = data.hits.hits.map((hit) => {
-            // If the _source is a JSON string, parse it
-            if (typeof hit._source === "string") {
-              try {
-                hit._source = JSON.parse(hit._source);
-              } catch (e) {
-                console.warn("Failed to parse _source as JSON:", hit._source);
-              }
+        let jsonResponse = "";
+        
+        async function fetchElasticSearchData() {
+            const selectedIndex = document.getElementById("dataView").value;
+            const elasticsearchUrl = `http://localhost:9200/${selectedIndex}/_search`;
+            try {
+                const response = await fetch(elasticsearchUrl, {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                });
+                if (!response.ok) {
+                    throw new Error("Failed to fetch data");
+                }
+                jsonResponse = await response.json();
+                alert("Data fetched successfully!");
+                console.log(jsonResponse);  // Print the JSON response to the browser console
+                displayJsonOnScreen();  // Display the JSON on the screen as well
+            } catch (error) {
+                alert("Error fetching data: " + error.message);
             }
-            return hit;
-          });
-
-          resultsContainer.textContent = JSON.stringify(hits, null, 2);
-        } catch (error) {
-          console.error("Query error:", error);
-          resultsContainer.textContent = `Error executing query: ${error.message}`;
         }
-      }
+
+        function displayJsonOnScreen() {
+            const jsonContainer = document.getElementById("jsonContainer");
+            jsonContainer.innerHTML = `<pre>${JSON.stringify(jsonResponse, null, 2)}</pre>`;
+        }
+
+        function displayOutput() {
+            const table = document.getElementById("outputTable");
+            table.innerHTML = "";
+            
+            if (!jsonResponse.hits || !jsonResponse.hits.hits.length) {
+                table.innerHTML = "<tr><td>No data found</td></tr>";
+                return;
+            }
+            
+            let headers = ["secure_website", "routed_website"];
+            let headerRow = table.insertRow();
+            headers.forEach(header => {
+                let th = document.createElement("th");
+                th.textContent = header;
+                headerRow.appendChild(th);
+            });
+
+            jsonResponse.hits.hits.forEach(hit => {
+                let row = table.insertRow();
+                headers.forEach(header => {
+                    let cell = row.insertCell();
+                    cell.textContent = hit._source.data[header] || "";
+                });
+            });
+        }
+
+        function storeOutput() {
+            const blob = new Blob([JSON.stringify(jsonResponse, null, 2)], { type: "application/json" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "output.json";
+            link.click();
+        }
     </script>
-  </body>
+</body>
 </html>
