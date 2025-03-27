@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Elasticsearch Query Interface</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        background: #f4f4f4;
+        padding: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Elasticsearch Query Interface</h1>
+    <label for="indices">Select Data View:</label>
+    <select id="indices">
+      <option value="user*">user*</option>
+      <option value="history*">history*</option>
+      <option value="dom*">dom*</option>
+      <option value="router*">router*</option>
+      <option value="cookies">cookies</option>
+      <option value="credentials">credentials</option>
+      <option value="js">js</option>
+    </select>
+    <br /><br />
+    <textarea id="query" rows="5" cols="50">
+{ "query": { "match_all": {} } }</textarea
+    >
+    <br /><br />
+    <button onclick="executeQuery()">Execute Query</button>
+    <br /><br />
+    <pre id="results"></pre>
+
+    <script>
+      const kibanaUrl = "http://localhost:5601";
+
+      async function executeQuery() {
+        const esUrl = "http://localhost:9200";
+        const selectedIndex = document.getElementById("indices").value;
+        const query = document.getElementById("query").value;
+        const resultsContainer = document.getElementById("results");
+        resultsContainer.textContent = "Loading...";
+
+        if (!selectedIndex) {
+          resultsContainer.textContent = "Please select a data view.";
+          return;
+        }
+
+        let queryBody;
+        try {
+          queryBody = JSON.parse(query);
+        } catch (e) {
+          resultsContainer.textContent = "Invalid JSON format.";
+          return;
+        }
+
+        try {
+          const response = await fetch(`${esUrl}/${selectedIndex}/_search`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(queryBody),
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP Error: ${response.status}`);
+          }
+
+          let data = await response.json();
+          let hits = data.hits.hits.map((hit) => {
+            // If the _source is a JSON string, parse it
+            if (typeof hit._source === "string") {
+              try {
+                hit._source = JSON.parse(hit._source);
+              } catch (e) {
+                console.warn("Failed to parse _source as JSON:", hit._source);
+              }
+            }
+            return hit;
+          });
+
+          resultsContainer.textContent = JSON.stringify(hits, null, 2);
+        } catch (error) {
+          console.error("Query error:", error);
+          resultsContainer.textContent = `Error executing query: ${error.message}`;
+        }
+      }
+    </script>
+  </body>
+</html>
